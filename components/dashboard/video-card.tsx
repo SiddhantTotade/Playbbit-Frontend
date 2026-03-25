@@ -105,14 +105,28 @@ export const VideoCard = ({ id, title, hlsUrl, thumbnail, isPrivate: initialIsPr
       videoElement.muted = true;
 
       if (Hls.isSupported()) {
+        const token = (session as any)?.accessToken;
+        console.log(">>> [VideoCard] Hovering. Token present:", !!token);
+        
         if (hlsRef.current) {
           hlsRef.current.destroy();
         }
 
-        const hls = new Hls();
+        const hls = new Hls({
+          xhrSetup: (xhr) => {
+            xhr.withCredentials = true; // Still keep for cookies
+            if (token) {
+              xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+            }
+          }
+        });
         hlsRef.current = hls;
 
-        hls.loadSource(getMediaUrl(hlsUrl));
+        let finalUrl = getMediaUrl(hlsUrl);
+        if (token) {
+          finalUrl += (finalUrl.includes("?") ? "&" : "?") + "token=" + token;
+        }
+        hls.loadSource(finalUrl);
         hls.attachMedia(videoElement);
 
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
@@ -130,7 +144,12 @@ export const VideoCard = ({ id, title, hlsUrl, thumbnail, isPrivate: initialIsPr
         });
       } else if (videoElement.canPlayType("application/vnd.apple.mpegurl")) {
         // Native support (Safari/iOS)
-        videoElement.src = getMediaUrl(hlsUrl);
+        const token = (session as any)?.accessToken;
+        let url = getMediaUrl(hlsUrl);
+        if (token) {
+          url += (url.includes("?") ? "&" : "?") + "token=" + token;
+        }
+        videoElement.src = url;
         videoElement.play().catch((e) => console.warn(e));
       }
     }

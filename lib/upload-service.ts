@@ -1,4 +1,4 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8082/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
 const CHUNK_SIZE = 5 * 1024 * 1024;
 
 export const uploadThumbnail = async (file: File, token: string): Promise<string> => {
@@ -30,6 +30,7 @@ export const uploadResumableVideo = async (
   onProgress: (percent: number) => void,
   thumbnailUrl?: string,
   description?: string,
+  accessPin?: string,
 ) => {
   console.log(`Checking upload status at ${API_BASE}/upload/status...`);
   const statusRes = await fetch(
@@ -61,6 +62,7 @@ export const uploadResumableVideo = async (
     formData.append("isPrivate", isPrivate.toString());
     if (thumbnailUrl) formData.append("thumbnailUrl", thumbnailUrl);
     if (description) formData.append("description", description);
+    if (accessPin) formData.append("accessPin", accessPin);
 
     const res = await fetch(`${API_BASE}/upload/chunk`, {
       method: "POST",

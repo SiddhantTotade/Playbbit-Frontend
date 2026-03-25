@@ -37,7 +37,7 @@ export function GoLiveDialog() {
         setError(null);
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8082/api'}/live/create`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api'}/live/create`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -127,7 +127,7 @@ export function GoLiveDialog() {
                                         <Input
                                             type="text"
                                             placeholder="My Awesome Live Stream"
-                                            className="bg-black/50 border-white/10 text-white rounded-xl h-11"
+                                            className="bg-black/50 border-white/10 text-white rounded-xl h-11 placeholder:text-slate-600"
                                             value={title}
                                             onChange={(e) => setTitle(e.target.value)}
                                         />

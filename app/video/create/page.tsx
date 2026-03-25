@@ -8,16 +8,17 @@ import { uploadResumableVideo, uploadThumbnail } from "@/lib/upload-service";
 import { MainLayout } from "@/components/layout/main-layout";
 
 export default function CreateVideoPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8082/api";
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
   const [file, setFile] = useState<File | null>(null);
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isPrivate, setIsPrivate] = useState(false);
+  const [accessPin, setAccessPin] = useState("");
 
   const [uploadProgress, setUploadProgress] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -81,7 +82,8 @@ export default function CreateVideoPage() {
           }
         },
         thumbnailUrl,
-        description
+        description,
+        accessPin
       );
 
       // Start polling for transcoding status instead of immediate redirect
@@ -125,6 +127,36 @@ export default function CreateVideoPage() {
       setLoading(false);
     }
   };
+
+  if (status === "loading") {
+    return (
+      <MainLayout>
+        <div className="flex justify-center items-center py-32">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-[#3713ec]"></div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    return (
+      <MainLayout>
+        <div className="flex flex-col items-center justify-center py-32 text-center animate-in fade-in zoom-in-95">
+          <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10 mx-auto">
+            <span className="material-symbols-outlined text-4xl text-slate-400">lock</span>
+          </div>
+          <h2 className="text-2xl font-black text-white mb-2">You must be logged in</h2>
+          <p className="text-slate-400 mb-8 max-w-sm mx-auto">Please sign in to upload a video or broadcast a live stream.</p>
+          <button
+            onClick={() => router.push("/login")}
+            className="px-6 py-3 bg-[#3713ec] hover:bg-[#2500c4] rounded-2xl text-white text-sm font-bold transition-all shadow-lg shadow-[#3713ec]/20"
+          >
+            Sign in
+          </button>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -227,23 +259,43 @@ export default function CreateVideoPage() {
                   />
                 </div>
 
-                <div className="flex items-center gap-3 p-4 bg-black/20 rounded-2xl border border-white/5 hover:border-[#3713ec]/30 transition-all cursor-pointer group" onClick={() => setIsPrivate(!isPrivate)}>
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isPrivate ? "bg-amber-500/10 text-amber-500" : "bg-[#3713ec]/10 text-[#3713ec]"
-                    }`}>
-                    <span className="material-symbols-outlined text-[20px]">
-                      {isPrivate ? "lock" : "public"}
-                    </span>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-black/20 rounded-2xl border border-white/5 hover:border-[#3713ec]/30 transition-all cursor-pointer group" onClick={() => setIsPrivate(!isPrivate)}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isPrivate ? "bg-amber-500/10 text-amber-500" : "bg-[#3713ec]/10 text-[#3713ec]"
+                      }`}>
+                      <span className="material-symbols-outlined text-[20px]">
+                        {isPrivate ? "lock" : "public"}
+                      </span>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold text-white">{isPrivate ? "Private Video" : "Public Video"}</p>
+                      <p className="text-[11px] text-slate-500">
+                        {isPrivate ? "Only you can see this video." : "Everyone on Playbbit can discover and watch."}
+                      </p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isPrivate ? "border-amber-500 bg-amber-500" : "border-white/10"
+                      }`}>
+                      {isPrivate && <span className="material-symbols-outlined text-[12px] text-black font-bold">check</span>}
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-bold text-white">{isPrivate ? "Private Video" : "Public Video"}</p>
-                    <p className="text-[11px] text-slate-500">
-                      {isPrivate ? "Only you can see this video." : "Everyone on Playbbit can discover and watch."}
-                    </p>
-                  </div>
-                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isPrivate ? "border-amber-500 bg-amber-500" : "border-white/10"
-                    }`}>
-                    {isPrivate && <span className="material-symbols-outlined text-[12px] text-black font-bold">check</span>}
-                  </div>
+ 
+                  {isPrivate && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300 ml-1">
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">6-Digit Access PIN</label>
+                      <input
+                        type="text"
+                        maxLength={6}
+                        pattern="\d{6}"
+                        className="w-full bg-black/40 border border-white/5 rounded-2xl px-5 py-4 text-white placeholder:text-slate-600 focus:ring-2 focus:ring-amber-500/50 outline-none transition-all font-mono tracking-[0.5em] text-center"
+                        value={accessPin}
+                        onChange={(e) => setAccessPin(e.target.value.replace(/\D/g, ""))}
+                        placeholder="000000"
+                        required={isPrivate}
+                        disabled={loading}
+                      />
+                      <p className="text-[10px] text-slate-500 ml-1">Viewers will need this PIN to watch your private video.</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

@@ -33,11 +33,13 @@ export default function LiveStreamViewerPage({ params }: { params: Promise<{ id:
     const [pinError, setPinError] = useState("");
     const [manifestUrl, setManifestUrl] = useState<string | null>(null);
 
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8082/api";
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
 
     const fetchStream = async () => {
         try {
-            const res = await fetch(`${API_BASE_URL}/live/${streamId}`);
+            const res = await fetch(`${API_BASE_URL}/live/${streamId}`, {
+                credentials: "include"
+            });
             if (!res.ok) throw new Error("Stream not found.");
             const data = await res.json();
             setStream(data);
@@ -74,6 +76,7 @@ export default function LiveStreamViewerPage({ params }: { params: Promise<{ id:
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ pin }),
+                credentials: "include"
             });
 
             if (!res.ok) throw new Error("Incorrect PIN.");
@@ -164,7 +167,7 @@ export default function LiveStreamViewerPage({ params }: { params: Promise<{ id:
                             </div>
                         ) : (
                             manifestUrl ? (
-                                <VideoPlayer src={manifestUrl} poster="/thumb-placeholder.jpg" />
+                                <VideoPlayer src={manifestUrl} poster="/thumb-placeholder.jpg" isLive={true} />
                             ) : (
                                 <div className="flex flex-col items-center gap-4 py-24 animate-in fade-in duration-1000">
                                     <div className="relative">

@@ -4,6 +4,7 @@ import { useSession } from "next-auth/react";
 import VideoPlayer from "@/components/VideoPlayer";
 import { MainLayout } from "@/components/layout/main-layout";
 import { getMediaUrl } from "@/lib/media-utils";
+import { API_BASE_URL } from "@/lib/api-config";
 
 export default function WatchPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -11,7 +12,9 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
   const [video, setVideo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [restrictedAccess, setRestrictedAccess] = useState(false);
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
+  const [pin, setPin] = useState("");
+  const [pinError, setPinError] = useState("");
+  const [verifying, setVerifying] = useState(false);
 
   const checkAccess = async () => {
     try {
@@ -19,7 +22,10 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
       const headers: any = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const res = await fetch(`${API_BASE_URL}/videos/${id}`, { headers });
+      const res = await fetch(`${API_BASE_URL}/videos/${id}`, { 
+        headers,
+        credentials: "include"
+      });
 
       if (res.status === 403) {
         setRestrictedAccess(true);
@@ -30,13 +36,46 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
 
       const data = await res.json();
       setVideo(data);
-      setRestrictedAccess(false);
+      
+      // If the video is private and no HLS URL is provided, it means access is restricted
+      if (data.isPrivate && !data.hlsUrl) {
+        setRestrictedAccess(true);
+      } else {
+        setRestrictedAccess(false);
+      }
       return true;
     } catch (err) {
       console.error("Heartbeat check failed:", err);
       return true; // Don't block on transient network errors
     } finally {
       setLoading(false);
+    }
+  };
+ 
+  const handleVerifyPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setVerifying(true);
+    setPinError("");
+ 
+    try {
+      const res = await fetch(`${API_BASE_URL}/videos/${id}/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin }),
+        credentials: "include",
+      });
+ 
+      if (res.ok) {
+        // Unlock successful, refresh the video data
+        checkAccess();
+      } else {
+        const data = await res.json();
+        setPinError(data.error || "Incorrect PIN");
+      }
+    } catch (err) {
+      setPinError("Verification failed. Please try again.");
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -66,20 +105,61 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
   if (restrictedAccess) {
     return (
       <MainLayout>
-        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
-          <div className="w-24 h-24 bg-amber-500/10 rounded-full flex items-center justify-center mb-6 border border-amber-500/20">
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4 animate-in fade-in duration-700">
+          <div className="w-24 h-24 bg-amber-500/10 rounded-full flex items-center justify-center mb-6 border border-amber-500/20 shadow-[0_0_50px_rgba(245,158,11,0.1)]">
             <span className="material-symbols-outlined text-amber-500 text-5xl">lock</span>
           </div>
-          <h1 className="text-4xl font-black text-white mb-4 tracking-tight">This Video is Private <span className="text-amber-500">.</span></h1>
-          <p className="text-slate-400 max-w-md mx-auto mb-10 text-lg">
-            The creator has restricted access to this content. It's no longer available for public viewing.
+          <h1 className="text-4xl font-black text-white mb-4 tracking-tight">Private Video <span className="text-amber-500">.</span></h1>
+          <p className="text-slate-400 max-w-md mx-auto mb-10 text-lg font-medium">
+            This content is protected. Please enter the 6-digit access PIN provided by the creator to hop in!
           </p>
-          <button
-            onClick={() => window.location.href = "/"}
-            className="px-8 py-3 bg-[#3713ec] hover:bg-[#2500c4] text-white rounded-2xl font-bold transition-all"
-          >
-            Back to Home
-          </button>
+ 
+          <form onSubmit={handleVerifyPin} className="w-full max-w-sm space-y-6">
+            <div className="space-y-4">
+              <input
+                type="text"
+                maxLength={6}
+                placeholder="••••••"
+                className={`w-full bg-white/5 border ${pinError ? "border-red-500/50 ring-2 ring-red-500/20" : "border-white/10 focus:border-amber-500/50 focus:ring-2 focus:ring-amber-500/20"} rounded-3xl px-8 py-5 text-center text-3xl font-black tracking-[0.8em] text-white outline-none transition-all placeholder:text-slate-700 shadow-inner`}
+                value={pin}
+                onChange={(e) => {
+                  setPin(e.target.value.replace(/\D/g, ""));
+                  setPinError("");
+                }}
+                disabled={verifying}
+                autoFocus
+              />
+              {pinError && (
+                <p className="text-red-400 text-sm font-bold animate-in shake-in-1 duration-300">
+                  {pinError}
+                </p>
+              )}
+            </div>
+ 
+            <div className="flex flex-col gap-4 pt-2">
+              <button
+                type="submit"
+                disabled={verifying || pin.length < 6}
+                className="w-full py-5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 disabled:hover:bg-amber-500 text-black font-black uppercase tracking-widest rounded-[2rem] transition-all active:scale-[0.98] shadow-xl shadow-amber-500/25 flex items-center justify-center gap-3"
+              >
+                {verifying ? (
+                  <div className="w-5 h-5 border-2 border-black border-t-transparent animate-spin rounded-full" />
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined font-black">key</span>
+                    Unlock Video
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => window.location.href = "/"}
+                className="w-full py-4 text-slate-500 hover:text-white text-xs font-bold uppercase tracking-widest transition-colors"
+              >
+                Go back to feed
+              </button>
+            </div>
+          </form>
         </div>
       </MainLayout>
     );

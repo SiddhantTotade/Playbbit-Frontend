@@ -29,7 +29,7 @@ export default function LiveFeedPage() {
     useEffect(() => {
         const fetchStreams = async () => {
             try {
-                const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8082/api";
+                const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
                 const res = await fetch(`${API_URL}/videos/live/public`);
                 if (!res.ok) throw new Error("Failed to fetch live streams");
                 const data = await res.json();
@@ -68,7 +68,17 @@ export default function LiveFeedPage() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <GoLiveDialog />
+                    {authStatus === "authenticated" ? (
+                        <GoLiveDialog />
+                    ) : (
+                        <button
+                            onClick={() => router.push("/login")}
+                            className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-white text-sm font-bold transition-all flex items-center gap-2 group"
+                        >
+                            Sign in to Go Live
+                            <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -112,7 +122,17 @@ export default function LiveFeedPage() {
                             No one is live right now. This is your chance to take the spotlight and start your own broadcast!
                         </p>
                         <div className="relative z-10">
-                            <GoLiveDialog />
+                            {authStatus === "authenticated" ? (
+                                <GoLiveDialog />
+                            ) : (
+                                <button
+                                    onClick={() => router.push("/login")}
+                                    className="px-6 py-3 bg-[#3713ec] hover:bg-[#2500c4] rounded-2xl text-white text-sm font-bold transition-all flex items-center gap-2 group shadow-lg shadow-[#3713ec]/20 mt-4"
+                                >
+                                    Sign in to Go Live
+                                    <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                                </button>
+                            )}
                         </div>
                     </div>
                 ) : (
@@ -121,12 +141,12 @@ export default function LiveFeedPage() {
                             <Link
                                 href={`/live/${stream.id}`}
                                 key={stream.id}
-                                className="group block"
+                                className="group block bg-[#0f0f12] rounded-[2rem] overflow-hidden border-2 border-white/5 hover:border-[#3713ec]/40 hover:shadow-[#3713ec]/20 shadow-2xl transition-all duration-300 cursor-pointer"
                             >
-                                <div className="relative aspect-video rounded-[2rem] overflow-hidden border border-white/5 bg-black/40 shadow-xl group-hover:shadow-[#3713ec]/20 transition-all duration-500 group-hover:-translate-y-2">
+                                <div className="relative aspect-video w-full bg-black overflow-hidden">
                                     {/* Thumbnail Placeholder with Gradient */}
                                     <div className="absolute inset-0 bg-gradient-to-br from-slate-900 to-black flex items-center justify-center">
-                                        <span className="material-symbols-outlined text-white/5 text-7xl group-hover:scale-110 transition-transform duration-700">sensors</span>
+                                        <span className="material-symbols-outlined text-white/5 text-7xl transition-transform duration-700">sensors</span>
                                     </div>
 
                                     {/* Top Badges */}
@@ -145,9 +165,6 @@ export default function LiveFeedPage() {
                                         </div>
                                     )}
 
-                                    {/* Play Overlay */}
-                                    <div className="absolute inset-0 z-10 bg-[#3713ec]/0 group-hover:bg-[#3713ec]/10 border-0 group-hover:border-[6px] border-[#3713ec]/20 transition-all duration-500" />
-
                                     <div className="absolute inset-0 z-20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 transform scale-75 group-hover:scale-100">
                                         <div className="w-14 h-14 rounded-2xl bg-[#3713ec] text-white flex items-center justify-center shadow-[0_0_30px_rgba(55,19,236,0.5)]">
                                             <span className="material-symbols-outlined text-3xl">play_arrow</span>
@@ -155,7 +172,7 @@ export default function LiveFeedPage() {
                                     </div>
                                 </div>
 
-                                <div className="mt-5 px-2">
+                                <div className="p-4 bg-gradient-to-b from-transparent to-black/20">
                                     <div className="flex gap-4">
                                         <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#3713ec] to-[#ff69b4] flex-shrink-0 flex items-center justify-center text-white font-black text-sm shadow-lg">
                                             {stream.userName ? stream.userName[0].toUpperCase() : stream.userId[0].toUpperCase()}

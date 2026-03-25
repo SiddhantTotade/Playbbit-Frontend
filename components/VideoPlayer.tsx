@@ -2,13 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import Hls from "hls.js";
 
 import { getMediaUrl } from "@/lib/media-utils";
+import { useSession } from "next-auth/react";
 
 interface Props {
   src: string;
   poster?: string;
+  isLive?: boolean;
 }
 
-export default function VideoPlayer({ src, poster }: Props) {
+export default function VideoPlayer({ src, poster, isLive = false }: Props) {
+  const { data: session } = useSession();
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hlsInstance, setHlsInstance] = useState<Hls | null>(null);
   const [audioTracks, setAudioTracks] = useState<any[]>([]);
@@ -29,42 +32,86 @@ export default function VideoPlayer({ src, poster }: Props) {
       console.warn("VideoPlayer: No source provided");
       return;
     }
-    const fullSrc = getMediaUrl(src);
+    const token = (session as any)?.accessToken;
+    let fullSrc = getMediaUrl(src);
+    if (token) {
+      fullSrc += (fullSrc.includes("?") ? "&" : "?") + "token=" + token;
+    }
+    console.log(`>>> [VideoPlayer] Loading source: ${fullSrc}`);
 
-    if (video.canPlayType("application/vnd.apple.mpegurl")) {
-      // Native HLS support (Safari/iOS)
-      video.src = fullSrc;
-    } else if (Hls.isSupported()) {
+    if (Hls.isSupported()) {
+      // Prefer HLS.js over native — it gives us audio track switching
       hls = new Hls({
         enableWorker: true,
+        xhrSetup: function(xhr) {
+          xhr.withCredentials = true;
+          if (token) {
+            xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+          }
+        }
       });
 
       hls.loadSource(fullSrc);
       hls.attachMedia(video);
 
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        console.log("HLS Manifest Parsed - Source:", fullSrc);
+      hls.on(Hls.Events.MANIFEST_PARSED, (_event: any, data: any) => {
+        console.log(`>>> [VideoPlayer] Manifest parsed with ${data.levels?.length || 0} levels`);
+        const tracks = hls?.audioTracks || [];
+        if (tracks.length > 0) {
+          setAudioTracks([...tracks]);
+        }
+        const subs = hls?.subtitleTracks || [];
+        if (subs.length > 0) {
+          setSubTracks([...subs]);
+        }
+
+        // Delayed fallback
+        setTimeout(() => {
+          const delayedTracks = hls?.audioTracks || [];
+          if (delayedTracks.length > 0) {
+            setAudioTracks(prev => prev.length === 0 ? [...delayedTracks] : prev);
+          }
+        }, 1000);
       });
 
-      hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_event, data) => {
-        console.log("HLS Audio Tracks Updated:", data.audioTracks);
-        setAudioTracks(data.audioTracks || []);
+      hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_event: any, data: any) => {
+        if (data.audioTracks && data.audioTracks.length > 0) {
+          setAudioTracks([...data.audioTracks]);
+        }
       });
 
-      hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, (_event, data) => {
-        console.log("HLS Subtitle Tracks Updated:", data.subtitleTracks);
-        setSubTracks(data.subtitleTracks || []);
+      hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, (_event: any, data: any) => {
+        if (data.subtitleTracks && data.subtitleTracks.length > 0) {
+          setSubTracks([...data.subtitleTracks]);
+        }
       });
 
-      hls.on(Hls.Events.ERROR, (_event, data) => {
+      hls.on(Hls.Events.ERROR, (_event: any, data: any) => {
         if (data.fatal) {
-          console.error("HLS fatal error:", data.type, data.details, "Source:", fullSrc);
+          console.error(`>>> [VideoPlayer] HLS fatal error: ${data.type} ${data.details}`, data);
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              console.error(">>> [VideoPlayer] Fatal network error - trying to recover");
+              hls.startLoad();
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              console.error(">>> [VideoPlayer] Fatal media error - trying to recover");
+              hls.recoverMediaError();
+              break;
+            default:
+              console.error(">>> [VideoPlayer] Unrecoverable error - destroying HLS");
+              hls.destroy();
+              break;
+          }
         } else {
-          console.warn("HLS non-fatal error:", data.details);
+          console.warn(`>>> [VideoPlayer] HLS non-fatal error: ${data.details}`);
         }
       });
 
       setHlsInstance(hls);
+    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+      // Fallback: Native HLS support (Safari/iOS) — no audio track switching
+      video.src = fullSrc;
     }
 
     return () => {
@@ -170,10 +217,15 @@ export default function VideoPlayer({ src, poster }: Props) {
     <div className="relative aspect-video w-full bg-black rounded-3xl overflow-hidden shadow-2xl group border border-white/5">
       <video
         ref={videoRef}
-        controls
-        className="w-full h-full"
+        controls={true}
+        crossOrigin="use-credentials"
+        className="w-full h-full object-contain"
         poster={getMediaUrl(poster)}
+        autoPlay
+        muted
       />
+
+
 
       {/* Settings Menu (Speed, Language, Subtitles) */}
       <div className="absolute top-4 right-4 bottom-16 z-50 flex flex-col items-end pointer-events-none">
