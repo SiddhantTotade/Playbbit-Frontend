@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { API_BASE_URL } from "@/lib/api-config";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { copyToClipboard as copyToClipboardUtil } from "@/lib/utils";
 
 export function GoLiveDialog() {
     const router = useRouter();
@@ -37,7 +39,7 @@ export function GoLiveDialog() {
         setError(null);
 
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api'}/live/create`, {
+            const res = await fetch(`${API_BASE_URL}/live/create`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -64,13 +66,15 @@ export function GoLiveDialog() {
 
     const copyToClipboard = async (text: string, type: 'url' | 'key') => {
         try {
-            await navigator.clipboard.writeText(text);
-            if (type === 'url') {
-                setCopiedUrl(true);
-                setTimeout(() => setCopiedUrl(false), 2000);
-            } else {
-                setCopiedKey(true);
-                setTimeout(() => setCopiedKey(false), 2000);
+            const success = await copyToClipboardUtil(text);
+            if (success) {
+                if (type === 'url') {
+                    setCopiedUrl(true);
+                    setTimeout(() => setCopiedUrl(false), 2000);
+                } else {
+                    setCopiedKey(true);
+                    setTimeout(() => setCopiedKey(false), 2000);
+                }
             }
         } catch (err) {
             console.error("Failed to copy", err);

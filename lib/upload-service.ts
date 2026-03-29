@@ -1,4 +1,6 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
+import { API_BASE_URL } from "@/lib/api-config";
+
+const API_BASE = API_BASE_URL;
 const CHUNK_SIZE = 5 * 1024 * 1024;
 
 export const uploadThumbnail = async (file: File, token: string): Promise<string> => {

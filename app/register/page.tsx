@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { API_BASE_URL } from "@/lib/api-config";
 
 // Shared Components
 import { AuthLayout } from "@/components/auth/auth-layout";
@@ -51,9 +52,7 @@ export default function RegisterPage() {
     setError("");
 
     try {
-      const baseUrl =
-        process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
-      const res = await fetch(`${baseUrl}/auth/register`, {
+      const res = await fetch(`${API_BASE_URL}/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),

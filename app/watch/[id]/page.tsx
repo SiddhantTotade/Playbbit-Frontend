@@ -2,6 +2,7 @@
 import { useEffect, useState, use } from "react";
 import { useSession } from "next-auth/react";
 import VideoPlayer from "@/components/VideoPlayer";
+import DownloadButton from "@/components/DownloadButton";
 import { MainLayout } from "@/components/layout/main-layout";
 import { getMediaUrl } from "@/lib/media-utils";
 import { API_BASE_URL } from "@/lib/api-config";
@@ -15,6 +16,7 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
   const [pin, setPin] = useState("");
   const [pinError, setPinError] = useState("");
   const [verifying, setVerifying] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
   const checkAccess = async () => {
     try {
@@ -27,6 +29,11 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
         credentials: "include"
       });
 
+      if (res.status === 404) {
+        setNotFound(true);
+        return false;
+      }
+
       if (res.status === 403) {
         setRestrictedAccess(true);
         return false;
@@ -35,17 +42,27 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
       if (!res.ok) throw new Error("Failed to fetch");
 
       const data = await res.json();
+      console.log(">>> [WatchPage] Received video data:", {
+        id: data.id,
+        isPrivate: data.isPrivate,
+        hasHlsUrl: !!data.hlsUrl,
+        status: data.status
+      });
       setVideo(data);
       
       // If the video is private and no HLS URL is provided, it means access is restricted
       if (data.isPrivate && !data.hlsUrl) {
+        console.log(">>> [WatchPage] Access still restricted: isPrivate=true, hlsUrl=null");
         setRestrictedAccess(true);
       } else {
+        console.log(">>> [WatchPage] Access granted: hlsUrl=" + data.hlsUrl);
         setRestrictedAccess(false);
       }
       return true;
-    } catch (err) {
-      console.error("Heartbeat check failed:", err);
+    } catch (err: any) {
+      if (!notFound) {
+        console.error("Heartbeat check failed:", err);
+      }
       return true; // Don't block on transient network errors
     } finally {
       setLoading(false);
@@ -66,8 +83,9 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
       });
  
       if (res.ok) {
+        console.log(">>> [WatchPage] PIN verification successful, refreshing access...");
         // Unlock successful, refresh the video data
-        checkAccess();
+        await checkAccess();
       } else {
         const data = await res.json();
         setPinError(data.error || "Incorrect PIN");
@@ -195,6 +213,31 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
     );
   }
 
+  if (notFound) {
+    return (
+      <MainLayout>
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4 animate-in fade-in duration-700">
+          <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mb-6 border border-red-500/20 shadow-[0_0_50px_rgba(239,68,68,0.1)]">
+            <span className="material-symbols-outlined text-red-500 text-5xl">video_settings</span>
+          </div>
+          <h1 className="text-4xl font-black text-white mb-4 tracking-tight">Video Unavailable <span className="text-red-500">.</span></h1>
+          <p className="text-slate-400 max-w-md mx-auto mb-10 text-lg font-medium">
+            This video is no longer available. It may have been deleted by the creator or moved to a different location.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              onClick={() => window.location.href = "/"}
+              className="px-10 py-4 bg-[#3713ec] hover:bg-[#2500c4] text-white rounded-[2rem] font-black uppercase tracking-widest transition-all active:scale-95 shadow-xl shadow-[#3713ec]/25 flex items-center justify-center gap-3"
+            >
+              <span className="material-symbols-outlined">home</span>
+              Back to Feed
+            </button>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
   if (!video) return null;
 
   return (
@@ -241,6 +284,7 @@ export default function WatchPage({ params }: { params: Promise<{ id: string }> 
                 <button className="flex items-center justify-center w-12 h-12 bg-white/5 hover:bg-white/10 text-white rounded-2xl transition-all active:scale-95 border border-white/5">
                   <span className="material-symbols-outlined">share</span>
                 </button>
+                <DownloadButton videoId={id} isLiveStream={false} />
               </div>
             </div>
 

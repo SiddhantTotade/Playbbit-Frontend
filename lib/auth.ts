@@ -13,9 +13,11 @@ export const authOptions: NextAuthOptions = {
       },
       // lib/auth.ts
       async authorize(credentials) {
+        const authApiUrl = process.env.AUTH_API_URL || "http://127.0.0.1:1994/api";
         try {
-          const baseUrl = API_BASE_URL;
-          const res = await fetch(`${baseUrl}/auth/login`, {
+          // Use direct Java backend port (1994) to bypass local connection refusal issues 
+          // between Next.js server and Teeter load balancer.
+          const res = await fetch(`${authApiUrl}/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -25,8 +27,9 @@ export const authOptions: NextAuthOptions = {
           });
 
           const data = await res.json();
+          const targetUrl = `${authApiUrl}/auth/login`;
 
-          console.log(`Login attempt for ${credentials?.email} to ${baseUrl}/auth/login`);
+          console.log(`Login attempt for ${credentials?.email} to ${targetUrl}`);
           console.log("Backend response status:", res.status);
           console.log("Backend response data:", data);
 
@@ -43,7 +46,14 @@ export const authOptions: NextAuthOptions = {
           console.warn("Login failed: Backend returned non-ok status or no token");
           return null;
         } catch (error) {
-          console.error("Login authorize error:", error);
+          console.error("FATAL: NextAuth authorize cannot reach Java backend!");
+          console.error("Target URL attempted:", `${authApiUrl}/auth/login`);
+          console.error("Error details:", error);
+          if (error instanceof Error) {
+            console.error("Error name:", error.name);
+            console.error("Error message:", error.message);
+            console.error("Stack trace:", error.stack);
+          }
           return null;
         }
       },

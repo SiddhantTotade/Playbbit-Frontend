@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
+import { GET_ORIGIN } from "@/lib/api-config";
 
 export const useUploadStatus = (uploadId: string | null) => {
   const [status, setStatus] = useState<string>("Waiting...");
@@ -8,8 +9,7 @@ export const useUploadStatus = (uploadId: string | null) => {
   useEffect(() => {
     if (!uploadId) return;
 
-    const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
-    const socket = new SockJS("http://localhost:8080/ws-video-status");
+    const socket = new SockJS(`${GET_ORIGIN()}/ws-video-status`);
     const client = new Client({
       webSocketFactory: () => socket,
       debug: (str) => console.log(str),

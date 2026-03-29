@@ -16,9 +16,42 @@ interface VideoCardProps {
   isOwner?: boolean;
   status?: string;
   onDeleted?: () => void;
+  createdAt?: string;
 }
 
-export const VideoCard = ({ id, title, hlsUrl, thumbnail, isPrivate: initialIsPrivate, isOwner, status, onDeleted }: VideoCardProps) => {
+export const VideoCard = ({ id, title, hlsUrl, thumbnail, isPrivate: initialIsPrivate, isOwner, status, onDeleted, createdAt }: VideoCardProps) => {
+  const formatTimeAgo = (dateString?: string) => {
+    if (!dateString) return "Few minutes ago";
+    try {
+      const now = new Date();
+      const past = new Date(dateString);
+      
+      if (isNaN(past.getTime())) return "Recently";
+
+      // Calculate the difference in milliseconds, ensuring it's not negative
+      const diffInMs = Math.max(0, now.getTime() - past.getTime());
+      const diffInMins = Math.floor(diffInMs / (1000 * 60));
+      const diffInHours = Math.floor(diffInMins / 60);
+      const diffInDays = Math.floor(diffInHours / 24);
+
+      if (diffInMins <= 30) return "Few minutes ago";
+      if (diffInMins < 60) return `${diffInMins} min ago`;
+      
+      if (diffInHours < 24) {
+        return diffInHours === 1 ? "1 hour ago" : `${diffInHours} hours ago`;
+      }
+      
+      if (diffInDays < 7) {
+        return diffInDays === 1 ? "1 day ago" : `${diffInDays} days ago`;
+      }
+      
+      return past.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    } catch (e) {
+      console.error("formatTimeAgo error", e);
+      return "Recently";
+    }
+  };
+
   const router = useRouter();
   const { data: session } = useSession();
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -97,6 +130,9 @@ export const VideoCard = ({ id, title, hlsUrl, thumbnail, isPrivate: initialIsPr
   const handleMouseEnter = () => {
     const isProcessing = status === "TRANSCODING" || status === "PENDING" || status === "FAILED";
     if (isProcessing) return;
+    
+    // Disable hover-to-play on mobile/touch devices
+    if (window.innerWidth < 768) return;
 
     setIsHovering(true);
 
@@ -260,19 +296,10 @@ export const VideoCard = ({ id, title, hlsUrl, thumbnail, isPrivate: initialIsPr
           {title}
         </h3>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className={`w-6 h-6 rounded-lg bg-gradient-to-tr flex items-center justify-center ${isPrivate ? "from-amber-500 to-orange-600" : "from-[#3713ec] to-purple-600"}`}>
-              <span className="material-symbols-outlined text-[12px] text-white">play_arrow</span>
-            </div>
-            <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest truncate max-w-[100px]">
-              {isOwner ? "Your Video" : "Community"}
+          <div className="flex items-center">
+            <span className="text-[10px] text-slate-400 font-black uppercase tracking-widest truncate">
+              {formatTimeAgo(createdAt)}
             </span>
-          </div>
-
-          <div className="flex -space-x-2">
-            {[...Array(3)].map((_, i) => (
-              <div key={i} className="w-5 h-5 rounded-full border-2 border-[#0a0a0c] bg-white/5" />
-            ))}
           </div>
         </div>
       </div>

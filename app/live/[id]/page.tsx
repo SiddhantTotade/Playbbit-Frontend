@@ -3,7 +3,9 @@
 import { useEffect, useState, use } from "react";
 import { useSession } from "next-auth/react";
 import VideoPlayer from "@/components/VideoPlayer";
+import DownloadButton from "@/components/DownloadButton";
 import { MainLayout } from "@/components/layout/main-layout";
+import { API_BASE_URL } from "@/lib/api-config";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -32,8 +34,6 @@ export default function LiveStreamViewerPage({ params }: { params: Promise<{ id:
     const [verifying, setVerifying] = useState(false);
     const [pinError, setPinError] = useState("");
     const [manifestUrl, setManifestUrl] = useState<string | null>(null);
-
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
 
     const fetchStream = async () => {
         try {
@@ -238,6 +238,9 @@ export default function LiveStreamViewerPage({ params }: { params: Promise<{ id:
                                 <button className="flex items-center justify-center w-12 h-12 bg-white/5 hover:bg-white/10 text-white rounded-2xl transition-all active:scale-95 border border-white/5">
                                     <span className="material-symbols-outlined">share</span>
                                 </button>
+                                {stream.status === "VOD" && (
+                                    <DownloadButton videoId={streamId} isLiveStream={true} />
+                                )}
                             </div>
                         </div>
 

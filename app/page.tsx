@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { VideoCard } from "@/components/dashboard/video-card";
 
 import { MainLayout } from "@/components/layout/main-layout";
+import { API_BASE_URL } from "@/lib/api-config";
 
 // Simple interface for your Java video objects
 export interface PlaybbitVideo {
@@ -16,6 +17,7 @@ export interface PlaybbitVideo {
   thumbnailUrl?: string;
   isPrivate: boolean;
   userId: string;
+  createdAt: string;
 }
 
 export default function DashboardPage() {
@@ -29,11 +31,10 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchAllData = async () => {
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
         const token = (session as any)?.accessToken;
 
         // 1. Fetch public feed (accessible to everyone)
-        const feedRes = await fetch(`${API_URL}/videos/feed`);
+        const feedRes = await fetch(`${API_BASE_URL}/videos/feed`);
         if (!feedRes.ok) throw new Error("Failed to fetch public feed");
         const feedData = await feedRes.json();
         // Defensive mapping for isPrivate
@@ -45,7 +46,7 @@ export default function DashboardPage() {
 
         // 2. Fetch "My Videos" if authenticated
         if (token) {
-          const myRes = await fetch(`${API_URL}/videos/my`, {
+          const myRes = await fetch(`${API_BASE_URL}/videos/my`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           if (myRes.ok) {
@@ -129,7 +130,7 @@ export default function DashboardPage() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
               {[...Array(4)].map((_, i) => (
                 <div key={i} className="aspect-video rounded-3xl bg-white/5 animate-pulse border border-white/5" />
               ))}
@@ -145,7 +146,7 @@ export default function DashboardPage() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
               {myVideos.map((video) => (
                 <VideoCard
                   key={video.id}
@@ -157,6 +158,7 @@ export default function DashboardPage() {
                   isOwner={true}
                   status={video.status}
                   onDeleted={() => handleDeleteVideo(video.id)}
+                  createdAt={video.createdAt}
                 />
               ))}
             </div>
@@ -177,7 +179,7 @@ export default function DashboardPage() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="aspect-video rounded-3xl bg-white/5 animate-pulse border border-white/5" />
             ))}
@@ -193,7 +195,7 @@ export default function DashboardPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-8">
             {publicVideos.map((video) => (
               <VideoCard
                 key={video.id}
@@ -205,6 +207,7 @@ export default function DashboardPage() {
                 isOwner={status === "authenticated" && session?.user?.email?.toLowerCase() === video.userId?.toLowerCase()}
                 status={video.status}
                 onDeleted={() => handleDeleteVideo(video.id)}
+                createdAt={video.createdAt}
               />
             ))}
           </div>

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { uploadResumableVideo, uploadThumbnail } from "@/lib/upload-service";
+import { API_BASE_URL } from "@/lib/api-config";
+import { generateUUID } from "@/lib/utils";
 
 import { MainLayout } from "@/components/layout/main-layout";
 
@@ -11,7 +13,6 @@ export default function CreateVideoPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
   const [file, setFile] = useState<File | null>(null);
   const [thumbnail, setThumbnail] = useState<File | null>(null);
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
@@ -64,7 +65,7 @@ export default function CreateVideoPage() {
         thumbnailUrl = await uploadThumbnail(thumbnail, token);
       }
 
-      const uploadId = crypto.randomUUID();
+      const uploadId = generateUUID();
       setStatusMsg("Starting video upload...");
 
       await uploadResumableVideo(

@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { MainLayout } from "@/components/layout/main-layout";
+import { API_BASE_URL } from "@/lib/api-config";
 import { GoLiveDialog } from "@/components/live/GoLiveDialog";
 
 interface StreamEntity {
@@ -29,8 +30,7 @@ export default function LiveFeedPage() {
     useEffect(() => {
         const fetchStreams = async () => {
             try {
-                const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080/api";
-                const res = await fetch(`${API_URL}/videos/live/public`);
+                const res = await fetch(`${API_BASE_URL}/videos/live/public`);
                 if (!res.ok) throw new Error("Failed to fetch live streams");
                 const data = await res.json();
                 setStreams(data);
