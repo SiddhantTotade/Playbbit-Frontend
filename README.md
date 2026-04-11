@@ -104,7 +104,3 @@ The application will be available at `http://localhost:3000`.
 
 - **[Playbbit-Backend](https://github.com/SiddhantTotade/Teeter)**: The Java/Spring-based backend powering the platform.
 - **[Teeter](https://github.com/SiddhantTotade/Teeter)**: The custom Go-based load balancer ensuring high availability.
-
----
-
-Built with passion by the Playbbit Team.
