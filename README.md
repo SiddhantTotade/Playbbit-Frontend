@@ -1,16 +1,40 @@
-# Playbbit Frontend 🐰
+# Playbbit Frontend
 
 A high-performance, modern video streaming and social platform frontend built with Next.js, optimized for seamless interaction and low-latency playback.
 
-## ✨ Features
+## Features
 
-- 🎥 **Low-Latency Streaming**: Powered by `hls.js` for smooth video delivery.
-- 💬 **Real-time Interaction**: Integrated STOMP/SockJS for live updates and chat.
-- 🔐 **Robust Auth**: Secure session management using NextAuth.js.
-- 🎨 **Modern UI**: Crafted with React 19, Tailwind CSS, and Radix UI components.
-- 📱 **Responsive Design**: Mobile-first approach for viewing on any device.
+- Low-Latency Streaming: Powered by hls.js for smooth video delivery.
+- Real-time Interaction: Integrated STOMP/SockJS for live updates and chat.
+- Robust Auth: Secure session management using NextAuth.js.
+- Modern UI: Crafted with React 19, Tailwind CSS, and Radix UI components.
+- Responsive Design: Mobile-first approach for viewing on any device.
 
-## 🏗 System Architecture
+## Technologies Used
+
+### Core Framework & UI
+- **Next.js 16.1.6**: React framework with App Router support.
+- **React 19**: Core UI library.
+- **TypeScript**: Type-safe JavaScript development.
+- **Tailwind CSS 4**: Modern CSS-in-JS styling with `tailwindcss-animate` and `@tailwindcss/forms`.
+- **Radix UI**: Primitive UI components for accessibility and customization.
+- **Lucide React**: Scalable icon set.
+- **class-variance-authority & tailwind-merge**: Utilities for managing dynamic CSS classes.
+
+### Media & Real-time
+- **hls.js**: JavaScript library for HTTP Live Streaming (HLS) playback.
+- **@stomp/stompjs & sockjs-client**: Messaging protocol for real-time WebSocket communication.
+
+### Authentication & Integration
+- **NextAuth.js**: Authentication solution for Next.js applications.
+- **ESLint**: Pluggable linting utility for code quality.
+
+### Infrastructure
+- **Teeter**: Go-based custom load balancer.
+- **Playbbit-Backend**: Main API service.
+- **MinIO**: S3-compatible object storage for media assets.
+
+## System Architecture
 
 Playbbit is designed with a decoupled architecture to ensure scalability and reliability.
 
