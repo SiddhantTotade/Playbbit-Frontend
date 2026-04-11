@@ -40,7 +40,7 @@ Playbbit is designed with a decoupled architecture to ensure scalability and rel
 
 - **Frontend**: This repository (Next.js Application).
 - **Backend**: [Playbbit-Backend](https://github.com/SiddhantTotade/Playbbit) — The core API and business logic.
-- **Load Balancer**: **Teeter** — A custom Go-based high-performance load balancer that manages traffic between the frontend and distributed backend services.
+- **Load Balancer**: [Teeter](https://github.com/SiddhantTotade/Playbbit) — A custom Go-based high-performance load balancer that manages traffic between the frontend and distributed backend services.
 
 ## Getting Started
 
