@@ -39,7 +39,7 @@ A high-performance, modern video streaming and social platform frontend built wi
 Playbbit is designed with a decoupled architecture to ensure scalability and reliability.
 
 - **Frontend**: This repository (Next.js Application).
-- **Backend**: [Playbbit-Backend](https://github.com/SiddhantTotade/Teeter) — The core API and business logic.
+- **Backend**: [Playbbit-Backend](https://github.com/SiddhantTotade/Playbbit) — The core API and business logic.
 - **Load Balancer**: **Teeter** — A custom Go-based high-performance load balancer that manages traffic between the frontend and distributed backend services.
 
 ## Getting Started
@@ -48,7 +48,7 @@ Playbbit is designed with a decoupled architecture to ensure scalability and rel
 
 - **Node.js**: v20 or later.
 - **npm**: v10 or later.
-- **Backend Services**: Ensure [Playbbit-Backend](https://github.com/SiddhantTotade/Teeter) and **Teeter** are configured and running.
+- **Backend Services**: Ensure [Playbbit-Backend](https://github.com/SiddhantTotade/Teeter) and [Teeter](https://github.com/SiddhantTotade/Teeter) are configured and running.
 
 ### Installation
 
