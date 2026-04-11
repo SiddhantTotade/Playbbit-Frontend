@@ -42,7 +42,7 @@ Playbbit is designed with a decoupled architecture to ensure scalability and rel
 - **Backend**: [Playbbit-Backend](https://github.com/SiddhantTotade/Teeter) — The core API and business logic.
 - **Load Balancer**: **Teeter** — A custom Go-based high-performance load balancer that manages traffic between the frontend and distributed backend services.
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -91,7 +91,7 @@ npm run dev
 
 The application will be available at `http://localhost:3000`.
 
-## 🛠 Available Scripts
+## Available Scripts
 
 | Script | Description |
 | :--- | :--- |
@@ -100,11 +100,11 @@ The application will be available at `http://localhost:3000`.
 | `npm run start` | Runs the built production application. |
 | `npm run lint` | Performs linting checks to ensure code quality. |
 
-## 🔗 Related Projects
+## Related Projects
 
 - **[Playbbit-Backend](https://github.com/SiddhantTotade/Teeter)**: The Java/Spring-based backend powering the platform.
 - **[Teeter](https://github.com/SiddhantTotade/Teeter)**: The custom Go-based load balancer ensuring high availability.
 
 ---
 
-Built with ❤️ by the Playbbit Team.
+Built with passion by the Playbbit Team.
